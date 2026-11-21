@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Apple Maps Style - GPS & Routing</title>
+    <link href='https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css' rel='stylesheet' />
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- GPS luôn nằm ở góc trên trái; HUD tốc độ chỉ hiện khi di chuyển/dẫn đường -->
+    <div class="top-left-stack">
+        <div class="gps-control">
+            <span class="gps-heading">GPS</span>
+            <button id="gps-toggle-switch" class="gps-toggle" type="button" role="switch"
+                aria-checked="false" aria-label="Bật GPS" title="Bật GPS">
+                <span class="gps-switch-thumb" aria-hidden="true"></span>
+                <span class="gps-switch-label">Off</span>
+            </button>
+            <span id="gps-dot" class="hud-dot" title="Trạng thái GPS"></span>
+        </div>
+        <div class="top-left-hud">
+            <span id="speed-display" class="hud-speed">0</span>
+            <span class="hud-unit">KM/H</span>
+        </div>
+    </div>
+
+    <!-- Banner chỉ hướng rẽ khi dẫn đường -->
+    <div id="nav-top-banner" class="turn-banner" hidden>
+        <div class="turn-icon-box" id="turn-icon-box" aria-hidden="true"></div>
+        <div class="turn-content">
+            <div class="turn-primary-row">
+                <span id="turn-distance" class="turn-distance">--</span>
+                <span id="turn-badge" class="turn-badge" hidden></span>
+            </div>
+            <div id="turn-instruction" class="turn-instruction">--</div>
+            <div id="turn-street" class="turn-street">--</div>
+            <div id="nav-next-sub" class="nav-next-sub" hidden></div>
+        </div>
+    </div>
+
+    <!-- Cụm nút điều khiển nổi bên phải -->
+    <div class="right-controls">
+        <button id="btn-theme" class="ctrl-btn" title="Chuyển giao diện Sáng / Tối">
+            <!-- Icon Mặt trời / Mặt trăng -->
+            <svg id="theme-icon" class="theme-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle class="theme-sun-core" cx="12" cy="12" r="5"></circle>
+                <g class="theme-rays">
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </g>
+                <path class="theme-moon" d="M20.2 15.1A8.5 8.5 0 0 1 8.9 3.8 8.5 8.5 0 1 0 20.2 15.1Z"></path>
+            </svg>
+        </button>
+        <div class="ctrl-divider"></div>
+        <button id="btn-language" class="ctrl-btn language-btn" type="button" aria-label="Đổi ngôn ngữ" title="Đổi ngôn ngữ">VI</button>
+        <div class="ctrl-divider"></div>
+        <button id="btn-3d" class="ctrl-btn active" title="Chuyển góc nhìn 2D / 3D">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+        </button>
+    </div>
+    <div class="recenter-control">
+        <button id="btn-recenter-control" class="ctrl-btn" type="button" aria-label="Re-center" title="Re-center">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="7"></circle>
+                <circle cx="12" cy="12" r="2"></circle>
+                <path d="M12 2v3M22 12h-3M12 22v-3M2 12h3"></path>
+            </svg>
+        </button>
+    </div>
+    <div id="left-map-tools" class="compass-slot">
+        <button id="btn-north" class="ctrl-btn compass-btn" type="button" aria-label="Về hướng Bắc" title="Về hướng Bắc">
+            <span id="compass-icon" class="compass-ring" aria-hidden="true">
+                <span class="pip pip-north" style="--deg: 0deg;"></span>
+                <span class="pip" style="--deg: 30deg;"></span>
+                <span class="pip" style="--deg: 60deg;"></span>
+                <span class="pip pip-accent" style="--deg: 90deg;"></span>
+                <span class="pip" style="--deg: 120deg;"></span>
+                <span class="pip" style="--deg: 150deg;"></span>
+                <span class="pip pip-accent" style="--deg: 180deg;"></span>
+                <span class="pip" style="--deg: 210deg;"></span>
+                <span class="pip" style="--deg: 240deg;"></span>
+                <span class="pip pip-accent" style="--deg: 270deg;"></span>
+                <span class="pip" style="--deg: 300deg;"></span>
+                <span class="pip" style="--deg: 330deg;"></span>
+            </span>
+            <span id="compass-direction" class="compass-center-dir" aria-hidden="true">N</span>
+        </button>
+    </div>
+
+    <button id="btn-recenter" class="nav-recenter-button" type="button" hidden title="Quay lại vị trí">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="8"></circle>
+            <circle cx="12" cy="12" r="2"></circle>
+            <path d="M12 2v3M22 12h-3M12 22v-3M2 12h3"></path>
+        </svg>
+        <span id="label-recenter">Quay lại vị trí</span>
+    </button>
+
+    <div id="nav-speed-pill" class="nav-speed-pill" hidden aria-label="Tốc độ hiện tại">
+        <span id="nav-speed-value" class="nav-speed-value">0</span>
+        <span class="nav-speed-unit">km/h</span>
+    </div>
+
+    <footer id="nav-bottom-hud" class="nav-bottom-hud" hidden>
+        <div class="nav-trip-metrics">
+            <div class="nav-metric-block">
+                <span id="nav-eta-value" class="nav-metric-value">--:--</span>
+                <span id="nav-eta-label" class="nav-metric-label">Dự kiến đến</span>
+            </div>
+            <div class="nav-metric-block">
+                <span id="nav-duration-value" class="nav-metric-value">--</span>
+                <span id="nav-duration-label" class="nav-metric-label">Thời gian</span>
+            </div>
+            <div class="nav-metric-block">
+                <span id="nav-distance-value" class="nav-metric-value">--</span>
+                <span id="nav-distance-label" class="nav-metric-label">Còn lại</span>
+            </div>
+        </div>
+        <button id="btn-end-trip" class="nav-end-trip-button" type="button">Kết thúc</button>
+    </footer>
+
+    <!-- Bottom Sheet tìm kiếm và Start/End -->
+    <div class="bottom-sheet" id="bottom-sheet" data-open="false">
+        <div class="sheet-header">
+            <div class="sheet-grabber" id="sheet-grabber"></div>
+            <div class="search-wrapper" id="search-wrapper">
+                <div class="search-row">
+                    <div class="search-pill" id="search-pill">
+                        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input id="search-input" type="text" placeholder="Nhập địa điểm..." enterkeyhint="search" />
+                        <button id="btn-clear-search" class="btn-clear-search" type="button" aria-label="Xóa nội dung tìm kiếm">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+                                <path d="M6 6l12 12M18 6L6 18"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <button id="btn-run" class="btn-pill btn-run" disabled>Start</button>
+                </div>
+                <div class="search-popover" id="search-popover">
+                    <div class="suggestions-box" id="suggestions-box" role="listbox" aria-label="Địa điểm gợi ý"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sheet-scroll-body" id="sheet-scroll-body">
+            <!-- Thẻ chi tiết địa điểm kiểu Apple Maps -->
+            <div class="place-detail-card" id="place-detail-card" hidden>
+                <div class="place-header">
+                    <div class="place-header-copy">
+                        <div class="place-title-wrap">
+                            <h2 class="place-title" id="place-title">--</h2>
+                            <span class="place-saved-badge" id="place-saved-badge" hidden>Đã lưu</span>
+                        </div>
+                        <p class="place-subtitle" id="place-subtitle">--</p>
+                    </div>
+                    <button type="button" class="place-btn-close" id="btn-close-place" aria-label="Đóng chi tiết">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <path d="M18 6L6 18M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Khối thông tin chi tiết (Địa chỉ, Tọa độ, Khoảng cách) -->
+                <div class="place-details-box">
+                    <div class="place-detail-row">
+                        <span class="detail-label" id="label-address">Địa chỉ</span>
+                        <span class="detail-value" id="detail-address">--</span>
+                    </div>
+                    <div class="place-detail-divider"></div>
+                    <div class="place-detail-row">
+                        <span class="detail-label" id="label-coords">Tọa độ</span>
+                        <span class="detail-value" id="detail-coords">--</span>
+                    </div>
+                    <div class="place-detail-divider"></div>
+                    <div class="place-detail-row">
+                        <span class="detail-label" id="label-distance">Khoảng cách</span>
+                        <span class="detail-value" id="detail-distance">--</span>
+                    </div>
+                </div>
+
+                <div class="vehicle-mode-bar" id="vehicle-mode-bar" role="group" aria-label="Chế độ di chuyển">
+                    <button type="button" class="mode-chip" id="mode-motorbike" data-mode="motorbike" aria-pressed="false" disabled>Xe máy</button>
+                    <button type="button" class="mode-chip" id="mode-car" data-mode="car" aria-pressed="false" disabled>Ô tô</button>
+                </div>
+
+                <div class="place-actions-bar">
+                    <button type="button" class="btn-action-primary" id="btn-place-route">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+                        </svg>
+                        <span id="place-route-text">Bắt đầu di chuyển</span>
+                    </button>
+                    <button type="button" class="btn-action-sub" id="btn-place-save" title="Lưu địa điểm" aria-label="Lưu địa điểm">
+                        <svg id="place-save-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <span id="label-save">Lưu</span>
+                    </button>
+                    <button type="button" class="btn-action-sub" id="btn-place-share" title="Sao chép tọa độ" aria-label="Sao chép tọa độ">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="18" cy="5" r="3"></circle>
+                            <circle cx="6" cy="12" r="3"></circle>
+                            <circle cx="18" cy="19" r="3"></circle>
+                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                        </svg>
+                        <span id="label-share">Chia sẻ</span>
+                    </button>
+                </div>
+            </div>
+
+            <section class="nearby-section" id="nearby-section" hidden>
+                <div class="recent-header">
+                    <span class="recent-title" id="nearby-title">Tìm quanh đây</span>
+                </div>
+                <div class="nearby-grid">
+                    <button type="button" class="nearby-chip" data-nearby-category="restaurant" data-label-key="nearbyRestaurants">
+                        <span class="nearby-icon" aria-hidden="true">Ăn</span>
+                        <span class="nearby-label">Quán ăn</span>
+                    </button>
+                    <button type="button" class="nearby-chip" data-nearby-category="cafe" data-label-key="nearbyCafes">
+                        <span class="nearby-icon" aria-hidden="true">Cà</span>
+                        <span class="nearby-label">Cà phê</span>
+                    </button>
+                    <button type="button" class="nearby-chip" data-nearby-category="fuel" data-label-key="nearbyFuel">
+                        <span class="nearby-icon" aria-hidden="true">X</span>
+                        <span class="nearby-label">Trạm xăng</span>
+                    </button>
+                    <button type="button" class="nearby-chip" data-nearby-category="supermarket" data-label-key="nearbyMarkets">
+                        <span class="nearby-icon" aria-hidden="true">Si</span>
+                        <span class="nearby-label">Siêu thị</span>
+                    </button>
+                    <button type="button" class="nearby-chip" data-nearby-category="pharmacy" data-label-key="nearbyPharmacies">
+                        <span class="nearby-icon" aria-hidden="true">Y</span>
+                        <span class="nearby-label">Nhà thuốc</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Khối danh sách địa điểm gần đây -->
+            <div class="recent-places-section" id="recent-places-section">
+                <div class="recent-header">
+                    <span class="recent-title" id="recent-title">Gần đây</span>
+                    <button type="button" class="btn-clear-recent" id="btn-clear-recent">Xóa</button>
+                </div>
+                <div class="recent-list" id="recent-list"></div>
+            </div>
+
+            <div class="meta-bar">
+                <span id="status-text">Sẵn sàng</span>
+                <span id="route-info">Sai số: --</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <script src='https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js'></script>
+    <script src="ui.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

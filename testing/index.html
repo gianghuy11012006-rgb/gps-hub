@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Test La Bàn Kiểu Bản Đồ</title>
+  <style>
+    :root {
+      --bg: #e9e5dc;
+      --compass-bg: #ffffff;
+      --text: #3c4043;
+      --muted: #dadce0;
+      --tick-dark: #5f6368;
+      --north: #ea4335;
+      --shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+    }
+
+    html[data-theme="dark"] {
+      --bg: #141820;
+      --compass-bg: #20242d;
+      --text: #e8eaed;
+      --muted: #3c4043;
+      --tick-dark: #9aa0a6;
+      --north: #f28b82;
+      --shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .panel {
+      width: 100%;
+      max-width: 340px;
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    html[data-theme="dark"] .panel {
+      background: rgba(24, 28, 36, 0.82);
+      color: var(--text);
+    }
+
+    .top {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .top-title {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .btn-sm {
+      border: 1px solid rgba(127, 127, 127, 0.25);
+      background: transparent;
+      color: inherit;
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* --- NÚT LA BÀN TRÒN --- */
+    .compass-btn {
+      position: relative;
+      width: 92px;
+      height: 92px;
+      border-radius: 50%;
+      border: 1px solid var(--muted);
+      background: var(--compass-bg);
+      cursor: pointer;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .compass-btn:active {
+      transform: scale(0.97);
+    }
+
+    /* Vòng các tam giác/vạch quanh viền trong */
+    .compass-ring {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      will-change: transform;
+      transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* Từng tam giác nhỏ hướng vào tâm */
+    .pip {
+      position: absolute;
+      top: 7px;
+      left: 50%;
+      width: 2px;
+      height: 10px;
+      border-top: 8px solid var(--muted);
+      transform-origin: 50% 39px; /* tâm vòng tròn (92/2 - 7 = 39px) */
+      transform: translateX(-50%) rotate(var(--deg, 0deg));
+    }
+
+    /* Tam giác đỏ chỉ hướng Bắc */
+    .pip.pip-north {
+        width: 0;
+        top: 5px;
+        height: 0;
+        border-radius: 0;
+        border-top: none;
+        border-left: 5.5px solid transparent;
+        border-right: 5.5px solid transparent;
+        border-bottom: 10px solid var(--north);
+        
+    }
+
+    /* Các vạch/tam giác nhấn ở 4 góc/hướng phụ */
+    .pip.pip-accent {
+        width: 3px;
+        height: 10px;
+        border-top-color: var(--tick-dark);
+    }
+
+    /* Chữ hướng to rõ ở chính giữa (đứng thẳng, không xoay theo ring) */
+    .compass-center-dir {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 28px;
+      font-weight: 600;
+      line-height: 1;
+      color: var(--text);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .controls {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      font-size: 13px;
+    }
+
+    .controls input[type="range"] {
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .row-btns {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <div class="top">
+      <span class="top-title">Compass Map Style</span>
+      <button class="btn-sm" id="theme-btn" type="button">Dark</button>
+    </div>
+
+    <button class="compass-btn" id="compass-btn" type="button" aria-label="Reset hướng Bắc">
+      <div class="compass-ring" id="compass-ring">
+        <!-- 12 tam giác quanh viền (mỗi vạch cách nhau 30deg) -->
+        <span class="pip pip-north" style="--deg: 0deg;"></span>
+        <span class="pip" style="--deg: 30deg;"></span>
+        <span class="pip" style="--deg: 60deg;"></span>
+        <span class="pip pip-accent" style="--deg: 90deg;"></span>
+        <span class="pip" style="--deg: 120deg;"></span>
+        <span class="pip" style="--deg: 150deg;"></span>
+        <span class="pip pip-accent" style="--deg: 180deg;"></span>
+        <span class="pip" style="--deg: 210deg;"></span>
+        <span class="pip" style="--deg: 240deg;"></span>
+        <span class="pip pip-accent" style="--deg: 270deg;"></span>
+        <span class="pip" style="--deg: 300deg;"></span>
+        <span class="pip" style="--deg: 330deg;"></span>
+      </div>
+
+      <span class="compass-center-dir" id="center-dir">N</span>
+    </button>
+
+    <div class="controls">
+      <div>Góc: <strong id="deg-label">0°</strong> (<span id="dir-label">N</span>)</div>
+      <input id="angle-slider" type="range" min="0" max="360" value="0" />
+      <div class="row-btns">
+        <button class="btn-sm" id="reset-btn" type="button">Về 0° (N)</button>
+        <button class="btn-sm" id="spin-btn" type="button">Xoay thử</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const ring = document.getElementById("compass-ring");
+    const centerDir = document.getElementById("center-dir");
+    const degLabel = document.getElementById("deg-label");
+    const dirLabel = document.getElementById("dir-label");
+    const slider = document.getElementById("angle-slider");
+    const compassBtn = document.getElementById("compass-btn");
+    const resetBtn = document.getElementById("reset-btn");
+    const spinBtn = document.getElementById("spin-btn");
+    const themeBtn = document.getElementById("theme-btn");
+
+    let currentAngle = 0;
+    let timer = null;
+
+    function getDirection(deg) {
+      const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+      const norm = ((deg % 360) + 360) % 360;
+      return dirs[Math.round(norm / 45) % 8];
+    }
+
+    function setHeading(targetDeg) {
+      const normTarget = ((targetDeg % 360) + 360) % 360;
+      const normCurrent = ((currentAngle % 360) + 360) % 360;
+
+      let delta = normTarget - normCurrent;
+      if (delta > 180) delta -= 360;
+      if (delta < -180) delta += 360;
+
+      currentAngle += delta;
+      ring.style.transform = `rotate(${-currentAngle}deg)`;
+
+      const rounded = Math.round(normTarget);
+      const dir = getDirection(rounded);
+
+      centerDir.textContent = dir;
+      dirLabel.textContent = dir;
+      degLabel.textContent = `${rounded}°`;
+      slider.value = String(rounded);
+    }
+
+    slider.addEventListener("input", (e) => {
+      setHeading(Number(e.target.value));
+    });
+
+    function resetNorth() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+        spinBtn.textContent = "Xoay thử";
+      }
+      setHeading(0);
+    }
+
+    compassBtn.addEventListener("click", resetNorth);
+    resetBtn.addEventListener("click", resetNorth);
+
+    spinBtn.addEventListener("click", () => {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+        spinBtn.textContent = "Xoay thử";
+        return;
+      }
+      spinBtn.textContent = "Dừng";
+      let a = Number(slider.value) || 0;
+      timer = setInterval(() => {
+        a = (a + 15) % 360;
+        setHeading(a);
+      }, 120);
+    });
+
+    themeBtn.addEventListener("click", () => {
+      const html = document.documentElement;
+      const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      html.setAttribute("data-theme", next);
+      themeBtn.textContent = next === "dark" ? "Light" : "Dark";
+    });
+  </script>
+</body>
+</html>
